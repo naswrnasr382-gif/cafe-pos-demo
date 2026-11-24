@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام نقطة بيع وإدارة طلبات الكافيه | Café POS</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #131a2a;
+      --surface-2: #1c253b;
+      --border: #2b3854;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #f59e0b;
+      --primary-text: #111827;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    body.light {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 18px 20px 60px;
+    }
+
+    /* Top Bar */
+    .topbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      font-size: 21px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .sync-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      color: var(--accent-green);
+      font-weight: 700;
+    }
+
+    .top-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-lang {
+      background: #eab308;
+      color: #111827;
+    }
+
+    .btn-theme {
+      background: var(--accent-red);
+      color: #fff;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+    }
+
+    .btn-blue {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .btn-green {
+      background: var(--accent-green);
+      color: #052e16;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Navigation Tabs */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 11px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: var(--primary-text);
+      border-color: var(--primary);
+    }
+
+    /* POS Layout */
+    .pos-layout {
+      display: grid;
+      grid-template-columns: 1.65fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 920px) {
+      .pos-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .cat-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .cat-pill {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .cat-pill.active {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+    }
+
+    .menu-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .menu-item:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .item-icon {
+      font-size: 28px;
+    }
+
+    .item-name {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .item-price {
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* Cart Panel */
+    .cart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 310px;
+      overflow-y: auto;
+      margin-bottom: 14px;
+    }
+
+    .cart-row {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .qty-btn {
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .totals-box {
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .total-grand {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* Kitchen / Barista Orders Grid */
+    .kitchen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .order-ticket {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .order-ticket.status-pending {
+      border-color: var(--primary);
+    }
+
+    .order-ticket.status-preparing {
+      border-color: var(--accent-blue);
+    }
+
+    .order-ticket.status-ready {
+      border-color: var(--accent-green);
+    }
+
+    .ticket-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge-pending { background: rgba(245, 158, 11, 0.18); color: var(--primary); }
+    .badge-preparing { background: rgba(59, 130, 246, 0.18); color: var(--accent-blue); }
+    .badge-ready { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); }
+
+    .ticket-items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .ticket-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Reports */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .stat-card h3 {
+      font-size: 24px;
+      font-weight: 900;
+      margin-top: 4px;
+      color: var(--primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: start;
+    }
+
+    th {
+      color: var(--muted);
+      background: var(--surface-2);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <h1 id="appTitle">☕ نظام نقطة بيع وإدارة طلبات الكافيه</h1>
+        <p id="appSubtitle">كاشير فوري + شاشة تحضير الباريستا + تقارير المبيعات السحابية</p>
+        <span class="sync-badge" id="syncBadge">● متصل ومزامن مع Firebase</span>
+      </div>
+      <div class="top-controls">
+        <button class="btn-lang" id="langBtn" onclick="toggleLang()">English</button>
+        <button class="btn-theme" id="themeBtn" onclick="toggleTheme()">الوضع النهاري</button>
+      </div>
+    </header>
+
+    <!-- View Switcher Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" id="tabPos" onclick="switchTab('pos')">🧾 شاشة الكاشير (POS)</button>
+      <button class="tab-btn" id="tabKitchen" onclick="switchTab('kitchen')">👨‍🍳 شاشة التحضير والباريستا (<span id="activeOrdersCount">0</span>)</button>
+      <button class="tab-btn" id="tabReports" onclick="switchTab('reports')">📊 سجل المبيعات والتقارير</button>
+    </nav>
+
+    <!-- TAB 1: POS CASHIER -->
+    <section id="viewPos" class="pos-layout">
+      <div class="panel">
+        <div class="cat-bar" id="categoryBar"></div>
+        <div class="menu-grid" id="menuGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="cart-header">
+          <h2 id="cartTitle" style="font-size:18px;">الطلب الحالي</h2>
+          <button class="btn-ghost" id="clearCartBtn" onclick="clearCart()">إفراغ السلة</button>
+        </div>
+
+        <div class="order-meta">
+          <div>
+            <select id="orderTypeSelect">
+              <option value="dinein">محلي (طاولة)</option>
+              <option value="takeaway">سفري (Takeaway)</option>
+            </select>
+          </div>
+          <div>
+            <input type="text" id="tableOrCustomerInput" placeholder="رقم الطاولة أو اسم العميل" />
+          </div>
+        </div>
+
+        <div class="cart-list" id="cartList"></div>
+
+        <div class="totals-box">
+          <div class="total-row">
+            <span id="lblSubtotal">المجموع الفرعي</span>
+            <span id="valSubtotal">0.00 ر.س</span>
+          </div>
+          <div class="total-row">
+            <span id="lblVat">ضريبة القيمة المضافة (15%)</span>
+            <span id="valVat">0.00 ر.س</span>
+          </div>
+          <div class="total-row total-grand">
+            <span id="lblGrandTotal">الإجمالي النهائي</span>
+            <span id="valGrandTotal">0.00 ر.س</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="submitOrderBtn" onclick="submitOrder()" style="width:100%; padding:13px; font-size:15px;">
+          ✓ تأكيد وإرسال الطلب للتحضير
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: KITCHEN / BARISTA -->
+    <section id="viewKitchen" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <h2 id="kitchenHeading" style="font-size:19px;">الطلبات النشطة في التحضير</h2>
+        <button class="btn-ghost" id="refreshBtn" onclick="fetchCloudState()">↻ تحديث فوري</button>
+      </div>
+      <div class="kitchen-grid" id="kitchenGrid"></div>
+    </section>
+
+    <!-- TAB 3: SALES REPORTS -->
+    <section id="viewReports" class="hidden">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span id="statRevenueLbl">إجمالي المبيعات</span>
+          <h3 id="statRevenueVal">0.00 ر.س</h3>
+        </div>
+        <div class="stat-card">
+          <span id="statOrdersLbl">إجمالي الطلبات</span>
+          <h3 id="statOrdersVal">0</h3>
+        </div>
+        <div class="stat-card">
+          <span id="statAvgLbl">متوسط قيمة الطلب</span>
+          <h3 id="statAvgVal">0.00 ر.س</h3>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+          <h3 id="historyTitle">سجل الطلبات المكتملة والنشطة</h3>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-blue" id="exportCsvBtn" onclick="exportSalesCSV()">تصدير CSV</button>
+            <button class="btn-ghost" id="resetDemoBtn" onclick="resetDemoData()">تصفير السجل التجريبي</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th id="thOrderNo">رقم الطلب</th>
+                <th id="thCustomer">النوع / العميل</th>
+                <th id="thItems">الأصناف</th>
+                <th id="thTotal">الإجمالي</th>
+                <th id="thStatus">الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const FIREBASE_DB_URL = "https://naser2009-default-rtdb.firebaseio.com";
+    const FIREBASE_POS_NODE = "/cafe_pos.json";
+    const LOCAL_STORAGE_KEY = "nasser_cafe_pos_v1";
+
+    let lang = "ar";
+    let activeTab = "pos";
+    let selectedCategory = "all";
+    let cart = [];
+    let state = {
+      orderCounter: 101,
+      orders: []
+    };
+
+    const MENU_ITEMS = [
+      { id: "espresso", cat: "hot", icon: "☕", nameAr: "إسبريسو", nameEn: "Espresso", price: 10 },
+      { id: "americano", cat: "hot", icon: "☕", nameAr: "أمريكانو", nameEn: "Americano", price: 13 },
+      { id: "cappuccino", cat: "hot", icon: "🥛", nameAr: "كابتشينو", nameEn: "Cappuccino", price: 16 },
+      { id: "flatwhite", cat: "hot", icon: "🤍", nameAr: "فلات وايت", nameEn: "Flat White", price: 17 },
+      { id: "spanish", cat: "cold", icon: "🧊", nameAr: "آيس سبانيش لاتيه", nameEn: "Iced Spanish Latte", price: 20 },
+      { id: "icedamericano", cat: "cold", icon: "🥤", nameAr: "آيس أمريكانو", nameEn: "Iced Americano", price: 14 },
+      { id: "matcha", cat: "cold", icon: "🍵", nameAr: "آيس ماتشا لاتيه", nameEn: "Iced Matcha Latte", price: 22 },
+      { id: "mojito", cat: "cold", icon: "🍋", nameAr: "موهيتو باشن فروت", nameEn: "Passion Fruit Mojito", price: 19 },
+      { id: "croissant", cat: "bakery", icon: "🥐", nameAr: "كرواسون زبدة", nameEn: "Butter Croissant", price: 12 },
+      { id: "cheesecake", cat: "bakery", icon: "🍰", nameAr: "تشيز كيك سان سيباستيان", nameEn: "San Sebastian Cheesecake", price: 24 },
+      { id: "brownie", cat: "bakery", icon: "🍫", nameAr: "براوني شوكولاتة", nameEn: "Chocolate Brownie", price: 15 },
+      { id: "club", cat: "bakery", icon: "🥪", nameAr: "كلوب ساندوتش", nameEn: "Club Sandwich", price: 23 }
+    ];
+
+    const TEXT = {
+      ar: {
+        langBtn: "English",
+        themeDark: "الوضع النهاري",
+        themeLight: "الوضع الليلي",
+        appTitle: "☕ نظام نقطة بيع وإدارة طلبات الكافيه",
+        appSubtitle: "كاشير فوري + شاشة تحضير الباريستا + تقارير المبيعات السحابية",
+        syncLive: "● متصل ومزامن مع Firebase",
+        syncLocal: "● وضع محلي (تأكد من الاتصال)",
+        tabPos: "🧾 شاشة الكاشير (POS)",
+        tabKitchen: "👨‍🍳 شاشة التحضير والباريستا",
+        tabReports: "📊 سجل المبيعات والتقارير",
+        catAll: "الكل",
+        catHot: "قهوة ساخنة",
+        catCold: "مشروبات باردة",
+        catBakery: "حلى ومخبوزات",
+        cartTitle: "الطلب الحالي",
+        clearCartBtn: "إفراغ السلة",
+        optDineIn: "محلي (طاولة)",
+        optTakeaway: "سفري (Takeaway)",
+        customerPlaceholder: "رقم الطاولة أو اسم العميل",
+        emptyCart: "السلة فارغة — اضغط على أي صنف لإضافته",
+        lblSubtotal: "المجموع الفرعي",
+        lblVat: "ضريبة القيمة المضافة (15%)",
+        lblGrandTotal: "الإجمالي النهائي",
+        submitOrderBtn: "✓ تأكيد وإرسال الطلب للتحضير",
+        kitchenHeading: "الطلبات النشطة في التحضير",
+        refreshBtn: "↻ تحديث فوري",
+        noActiveOrders: "لا توجد طلبات قيد التحضير حالياً",
+        btnStartPrep: "بدء التحضير",
+        btnMarkReady: "جاهز للتسليم",
+        btnComplete: "تم التسليم ✓",
+        statusPending: "قيد الانتظار",
+        statusPreparing: "قيد التحضير",
+        statusReady: "جاهز للتسليم",
+        statusCompleted: "مكتمل",
+        statRevenueLbl: "إجمالي المبيعات",
+        statOrdersLbl: "إجمالي الطلبات",
+        statAvgLbl: "متوسط قيمة الطلب",
+        historyTitle: "سجل الطلبات المكتملة والنشطة",
+        exportCsvBtn: "تصدير CSV",
+        resetDemoBtn: "تصفير السجل التجريبي",
+        thOrderNo: "رقم الطلب",
+        thCustomer: "النوع / العميل",
+        thItems: "الأصناف",
+        thTotal: "الإجمالي",
+        thStatus: "الحالة",
+        currency: "ر.س"
+      },
+      en: {
+        langBtn: "العربية",
+        themeDark: "Light Mode",
+        themeLight: "Dark Mode",
+        appTitle: "☕ Café POS & Order Management System",
+        appSubtitle: "Instant Cashier + Barista Prep Display + Cloud Sales Reports",
+        syncLive: "● Synced with Firebase",
+        syncLocal: "● Local mode",
+        tabPos: "🧾 Cashier POS",
+        tabKitchen: "👨‍🍳 Barista / Kitchen Display",
+        tabReports: "📊 Sales & Reports",
+        catAll: "All",
+        catHot: "Hot Coffee",
+        catCold: "Cold Drinks",
+        catBakery: "Bakery & Desserts",
+        cartTitle: "Current Order",
+        clearCartBtn: "Clear Cart",
+        optDineIn: "Dine-in (Table)",
+        optTakeaway: "Takeaway",
+        customerPlaceholder: "Table # or Customer Name",
+        emptyCart: "Cart is empty — tap any item to add",
+        lblSubtotal: "Subtotal",
+        lblVat: "VAT (15%)",
+        lblGrandTotal: "Grand Total",
+        submitOrderBtn: "✓ Confirm & Send to Prep",
+        kitchenHeading: "Active Prep Queue",
+        refreshBtn: "↻ Refresh Now",
+        noActiveOrders: "No active orders in queue right now",
+        btnStartPrep: "Start Prep",
+        btnMarkReady: "Mark Ready",
+        btnComplete: "Delivered ✓",
+        statusPending: "Pending",
+        statusPreparing: "Preparing",
+        statusReady: "Ready",
+        statusCompleted: "Completed",
+        statRevenueLbl: "Total Sales",
+        statOrdersLbl: "Total Orders",
+        statAvgLbl: "Average Order Value",
+        historyTitle: "Completed & Active Orders Log",
+        exportCsvBtn: "Export CSV",
+        resetDemoBtn: "Reset Demo Log",
+        thOrderNo: "Order #",
+        thCustomer: "Type / Customer",
+        thItems: "Items",
+        thTotal: "Total",
+        thStatus: "Status",
+        currency: "SAR"
+      }
+    };
+
+    function formatMoney(val) {
+      return val.toFixed(2) + " " + TEXT[lang].currency;
+    }
+
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.orders)) {
+            state = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function saveLocal() {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+    }
+
+    async function fetchCloudState() {
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}${FIREBASE_POS_NODE}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.orders)) {
+            state = data;
+            saveLocal();
+          } else if (data && typeof data.orderCounter === "number") {
+            state = { orderCounter: data.orderCounter, orders: data.orders || [] };
+            saveLocal();
+          }
+          document.getElementById("syncBadge").textContent = TEXT[lang].syncLive;
+          render();
+        }
+      } catch (e) {
+        document.getElementById("syncBadge").textContent = TEXT[lang].syncLocal;
+      }
+    }
+
+    async function pushCloudState() {
+      saveLocal();
+      render();
+      try {
+        await fetch(`${FIREBASE_DB_URL}${FIREBASE_POS_NODE}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state)
+        });
+        document.getElementById("syncBadge").textContent = TEXT[lang].syncLive;
+      } catch (e) {
+        document.getElementById("syncBadge").textContent = TEXT[lang].syncLocal;
+      }
+    }
+
+    function toggleLang() {
+      lang = lang === "ar" ? "en" : "ar";
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+      render();
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light");
+      render();
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById("viewPos").classList.toggle("hidden", tab !== "pos");
+      document.getElementById("viewKitchen").classList.toggle("hidden", tab !== "kitchen");
+      document.getElementById("viewReports").classList.toggle("hidden", tab !== "reports");
+
+      document.getElementById("tabPos").classList.toggle("active", tab === "pos");
+      document.getElementById("tabKitchen").classList.toggle("active", tab === "kitchen");
+      document.getElementById("tabReports").classList.toggle("active", tab === "reports");
+      render();
+    }
+
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      render();
+    }
+
+    function addToCart(itemId) {
+      const existing = cart.find(c => c.id === itemId);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ id: itemId, qty: 1 });
+      }
+      render();
+    }
+
+    function updateQty(itemId, delta) {
+      const idx = cart.findIndex(c => c.id === itemId);
+      if (idx === -1) return;
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) {
+        cart.splice(idx, 1);
+      }
+      render();
+    }
+
+    function clearCart() {
+      cart = [];
+      render();
+    }
+
+    async function submitOrder() {
+      if (cart.length === 0) return;
+
+      const orderType = document.getElementById("orderTypeSelect").value;
+      const customerNote = document.getElementById("tableOrCustomerInput").value.trim();
+
+      let subtotal = 0;
+      const itemsDetailed = cart.map(c => {
+        const meta = MENU_ITEMS.find(m => m.id === c.id);
+        subtotal += meta.price * c.qty;
+        return {
+          id: meta.id,
+          nameAr: meta.nameAr,
+          nameEn: meta.nameEn,
+          qty: c.qty,
+          price: meta.price
+        };
+      });
+
+      const vat = subtotal * 0.15;
+      const total = subtotal + vat;
+
+      const newOrder = {
+        id: "ORD-" + state.orderCounter,
+        number: state.orderCounter,
+        type: orderType,
+        customer: customerNote || (orderType === "dinein" ? "Table 1" : "Walk-in"),
+        items: itemsDetailed,
+        subtotal: Number(subtotal.toFixed(2)),
+        vat: Number(vat.toFixed(2)),
+        total: Number(total.toFixed(2)),
+        status: "pending",
+        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+
+      state.orderCounter += 1;
+      state.orders.unshift(newOrder);
+
+      cart = [];
+      document.getElementById("tableOrCustomerInput").value = "";
+      await pushCloudState();
+    }
+
+    async function updateOrderStatus(orderId, nextStatus) {
+      const ord = state.orders.find(o => o.id === orderId);
+      if (!ord) return;
+      ord.status = nextStatus;
+      await pushCloudState();
+    }
+
+    async function resetDemoData() {
+      state = { orderCounter: 101, orders: [] };
+      await pushCloudState();
+    }
+
+    function exportSalesCSV() {
+      const rows = [["OrderNo", "Type", "Customer", "Items", "Total", "Status", "Time"]];
+      state.orders.forEach(o => {
+        const itemsStr = o.items.map(i => `${i.nameEn} x${i.qty}`).join(" | ");
+        rows.push([o.id, o.type, o.customer, itemsStr, o.total, o.status, o.createdAt || ""]);
+      });
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = encodeURI(csvContent);
+      a.download = "cafe_pos_sales.csv";
+      a.click();
+    }
+
+    function render() {
+      const t = TEXT[lang];
+      const isLight = document.body.classList.contains("light");
+
+      document.getElementById("langBtn").textContent = t.langBtn;
+      document.getElementById("themeBtn").textContent = isLight ? t.themeLight : t.themeDark;
+      document.getElementById("appTitle").textContent = t.appTitle;
+      document.getElementById("appSubtitle").textContent = t.appSubtitle;
+
+      const activeOrders = state.orders.filter(o => o.status !== "completed");
+      document.getElementById("tabPos").textContent = t.tabPos;
+      document.getElementById("tabKitchen").innerHTML = `${t.tabKitchen} (<span>${activeOrders.length}</span>)`;
+      document.getElementById("tabReports").textContent = t.tabReports;
+
+      // Categories
+      const cats = [
+        { id: "all", label: t.catAll },
+        { id: "hot", label: t.catHot },
+        { id: "cold", label: t.catCold },
+        { id: "bakery", label: t.catBakery }
+      ];
+      document.getElementById("categoryBar").innerHTML = cats.map(c =>
+        `<button class="cat-pill ${selectedCategory === c.id ? "active" : ""}" onclick="selectCategory('${c.id}')">${c.label}</button>`
+      ).join("");
+
+      // Menu Grid
+      const filteredMenu = selectedCategory === "all"
+        ? MENU_ITEMS
+        : MENU_ITEMS.filter(m => m.cat === selectedCategory);
+
+      document.getElementById("menuGrid").innerHTML = filteredMenu.map(item => `
+        <div class="menu-item" onclick="addToCart('${item.id}')">
+          <div class="item-icon">${item.icon}</div>
+          <div>
+            <div class="item-name">${lang === "ar" ? item.nameAr : item.nameEn}</div>
+            <div class="item-price">${formatMoney(item.price)}</div>
+          </div>
+        </div>
+      `).join("");
+
+      // Cart
+      document.getElementById("cartTitle").textContent = t.cartTitle;
+      document.getElementById("clearCartBtn").textContent = t.clearCartBtn;
+      document.getElementById("orderTypeSelect").options[0].textContent = t.optDineIn;
+      document.getElementById("orderTypeSelect").options[1].textContent = t.optTakeaway;
+      document.getElementById("tableOrCustomerInput").placeholder = t.customerPlaceholder;
+      document.getElementById("lblSubtotal").textContent = t.lblSubtotal;
+      document.getElementById("lblVat").textContent = t.lblVat;
+      document.getElementById("lblGrandTotal").textContent = t.lblGrandTotal;
+      document.getElementById("submitOrderBtn").textContent = t.submitOrderBtn;
+
+      const cartList = document.getElementById("cartList");
+      let subtotal = 0;
+
+      if (cart.length === 0) {
+        cartList.innerHTML = `<p style="color:var(--muted); text-align:center; padding:24px 0; font-size:13px;">${t.emptyCart}</p>`;
+      } else {
+        cartList.innerHTML = cart.map(c => {
+          const meta = MENU_ITEMS.find(m => m.id === c.id);
+          const lineTotal = meta.price * c.qty;
+          subtotal += lineTotal;
+          return `
+            <div class="cart-row">
+              <div>
+                <div style="font-weight:800; font-size:14px;">${lang === "ar" ? meta.nameAr : meta.nameEn}</div>
+                <div style="font-size:12px; color:var(--muted);">${formatMoney(lineTotal)}</div>
+              </div>
+              <div class="qty-controls">
+                <button class="qty-btn" onclick="updateQty('${c.id}', -1)">-</button>
+                <span style="min-width:20px; text-align:center; font-weight:800;">${c.qty}</span>
+                <button class="qty-btn" onclick="updateQty('${c.id}', 1)">+</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      const vat = subtotal * 0.15;
+      const grand = subtotal + vat;
+      document.getElementById("valSubtotal").textContent = formatMoney(subtotal);
+      document.getElementById("valVat").textContent = formatMoney(vat);
+      document.getElementById("valGrandTotal").textContent = formatMoney(grand);
+
+      // Kitchen Grid
+      document.getElementById("kitchenHeading").textContent = t.kitchenHeading;
+      document.getElementById("refreshBtn").textContent = t.refreshBtn;
+
+      const kitchenGrid = document.getElementById("kitchenGrid");
+      if (activeOrders.length === 0) {
+        kitchenGrid.innerHTML = `<div class="panel" style="grid-column:1/-1; text-align:center; color:var(--muted);">${t.noActiveOrders}</div>`;
+      } else {
+        kitchenGrid.innerHTML = activeOrders.map(o => {
+          const statusLabel = o.status === "pending" ? t.statusPending
+            : o.status === "preparing" ? t.statusPreparing
+            : t.statusReady;
+
+          return `
+            <div class="order-ticket status-${o.status}">
+              <div>
+                <div class="ticket-head">
+                  <strong>#${o.number} — ${o.customer}</strong>
+                  <span class="badge badge-${o.status}">${statusLabel}</span>
+                </div>
+                <div style="font-size:12px; color:var(--muted); margin:6px 0 10px;">
+                  ${o.type === "dinein" ? t.optDineIn : t.optTakeaway} • ${o.createdAt || ""}
+                </div>
+                <ul class="ticket-items">
+                  ${o.items.map(i => `<li>• <strong>${i.qty}x</strong> ${lang === "ar" ? i.nameAr : i.nameEn}</li>`).join("")}
+                </ul>
+              </div>
+              <div class="ticket-actions">
+                ${o.status === "pending"
+                  ? `<button class="btn-blue" onclick="updateOrderStatus('${o.id}', 'preparing')">${t.btnStartPrep}</button>`
+                  : `<button class="btn-green" onclick="updateOrderStatus('${o.id}', 'ready')">${t.btnMarkReady}</button>`
+                }
+                <button class="btn-ghost" onclick="updateOrderStatus('${o.id}', 'completed')">${t.btnComplete}</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // Reports
+      const totalRev = state.orders.reduce((sum, o) => sum + (o.total || 0), 0);
+      const totalCnt = state.orders.length;
+      const avgOrder = totalCnt > 0 ? totalRev / totalCnt : 0;
+
+      document.getElementById("statRevenueLbl").textContent = t.statRevenueLbl;
+      document.getElementById("statOrdersLbl").textContent = t.statOrdersLbl;
+      document.getElementById("statAvgLbl").textContent = t.statAvgLbl;
+      document.getElementById("statRevenueVal").textContent = formatMoney(totalRev);
+      document.getElementById("statOrdersVal").textContent = totalCnt;
+      document.getElementById("statAvgVal").textContent = formatMoney(avgOrder);
+
+      document.getElementById("historyTitle").textContent = t.historyTitle;
+      document.getElementById("exportCsvBtn").textContent = t.exportCsvBtn;
+      document.getElementById("resetDemoBtn").textContent = t.resetDemoBtn;
+      document.getElementById("thOrderNo").textContent = t.thOrderNo;
+      document.getElementById("thCustomer").textContent = t.thCustomer;
+      document.getElementById("thItems").textContent = t.thItems;
+      document.getElementById("thTotal").textContent = t.thTotal;
+      document.getElementById("thStatus").textContent = t.thStatus;
+
+      document.getElementById("reportsTableBody").innerHTML = state.orders.map(o => {
+        const st = o.status === "pending" ? t.statusPending
+          : o.status === "preparing" ? t.statusPreparing
+          : o.status === "ready" ? t.statusReady
+          : t.statusCompleted;
+        const summary = o.items.map(i => `${lang === "ar" ? i.nameAr : i.nameEn} (${i.qty})`).join("، ");
+        return `
+          <tr>
+            <td><strong>#${o.number}</strong></td>
+            <td>${o.customer}</td>
+            <td>${summary}</td>
+            <td>${formatMoney(o.total)}</td>
+            <td>${st}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    loadLocal();
+    render();
+    fetchCloudState();
+    setInterval(fetchCloudState, 6000);
+  </script>
+</body>
+</html>
